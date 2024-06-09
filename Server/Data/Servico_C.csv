@@ -1,0 +1,6 @@
+﻿TarefaID,Descricao,Estado,ClienteID
+SC_T1,Entregar encomenda em Folhadela,Concluido,Cl_0007
+SC_T2,Entregar encomenda em Sabroso,Nao alocado,
+SC_T3,Entregar encomenda em Parada de Cunhos,Nao alocado,
+SC_T4,Entregar cartas na cidade,Nao alocado,
+SC_T5,Entregar encomenda na Camara Municipal,Nao alocado,

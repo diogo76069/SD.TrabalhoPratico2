@@ -1,0 +1,6 @@
+﻿TarefaID,Descricao,Estado,ClienteID
+SB_T1,Ronda na floresta 1 da cidade,Concluido,Cl_0004
+SB_T2,Ronda na floresta 2 da cidade,Em curso,Cl_0005
+SB_T3,Ronda na floresta 3 da cidade,Nao alocado,
+SB_T4,Levar água à população de Mouços ,Nao alocado,
+SB_T5,Apagar incendio na Régua,Nao alocado,

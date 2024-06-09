@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+option csharp_namespace = "Server";
+
+service ServiMoto {
+	// Servico de Login, retorna o serviço do cliente
+	rpc LogInClient (ClientLookup) returns (ClientService);
+	// Servico que retorna a tarefa atual do utilizador (caso exista)
+	rpc FindCurrentTask (TaskLookup) returns (CurrentTask);
+}
+
+// Mensagem com dados login do utilizador
+message ClientLookup {
+	string id = 1;
+	string password = 2;
+}
+
+// Mensagem com id do utilizador e servico para procurar tarefa atual
+message TaskLookup {
+	string id = 1;
+	string servico = 2;
+}
+
+// Mensagem para enviar o serviço do client, caso login esteja correto
+message ClientService {
+	string servico	= 1;
+}
+
+// Mensagem com a tarefa atual do utilizador
+message CurrentTask {
+	string id = 1;
+	string servico = 2;
+	string tarefa = 3;
+	string estado = 4;
+}
