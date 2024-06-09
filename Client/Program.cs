@@ -11,51 +11,45 @@ namespace Client
             using var channel = GrpcChannel.ForAddress("http://localhost:5083");
             var client = new ServiMoto.ServiMotoClient(channel);
 
-            ClientModel currentClient = new ClientModel();
+            await HandleClient(client);
+        }
+
+        static async Task HandleClient(ServiMoto.ServiMotoClient client)
+        {
+            ClientModel currentUser = new ClientModel();
             TarefaModel currentTask = new TarefaModel();
+            string? input = string.Empty;
 
             // Ciclo para login
             while (true)
             {
-                currentClient = await LoginAsync(client);
+                currentUser = await LoginAsync(client);
 
-                if (currentClient.Id != string.Empty)
+                if (currentUser.Id != string.Empty)
                 {
-                    Console.WriteLine("Login successful. Welcome {0} from {1}.\n", currentClient.Id, currentClient.Service);
+                    // Depois de se autenticar procura a tarefa atual
+                    Console.Clear();
+                    currentTask = await GetCurrentTaskAsync(client, currentUser);
                     break;
                 }
 
-                Console.WriteLine("Incorrect username or password.\n");
+                Console.Clear();
             }
 
-            currentTask = await GetCurrentTaskAsync(client, currentClient);
-
-            Console.WriteLine($"{currentTask.Id},{currentTask.Description},{currentTask.State},{currentTask.ClienteId}");
-            Console.WriteLine("Press any key to continue...");
-            Console.ReadKey();
-            //HandleCommand(client, currentClient);
-        }
-
-        static async void HandleCommand(ServiMoto.ServiMotoClient client, ClientModel currentClient)
-        {
-            //string? command = Console.ReadLine();
-            //ClientModel currentClient = new ClientModel();
-            TarefaModel currentTask = await GetCurrentTaskAsync(client, currentClient);
-            
-            if (currentClient.Id != string.Empty)
+            while (true)
             {
                 HelpCommand();
+                input = Console.ReadLine();
 
-                Console.WriteLine($"{currentTask.Id},{currentTask.Description},{currentTask.State},{currentTask.ClienteId}");
-                /*switch (command)
+                switch(input)
                 {
                     // Pedir tarefa atual
-                    case "TASK":
-
+                    case "TASK INFO":
+                        await GetCurrentTaskAsync(client, currentUser);
                         break;
                     case "TASK NEW":
                         // Para pedir uma nova tarefa não pode ter nenhuma em curso
-                        if (currentTask.Id == null)
+                        if (currentTask.Id == string.Empty)
                         {
 
                         }
@@ -67,10 +61,14 @@ namespace Client
                         break;
                     case "TASK COMPLETE":
                         // Apenas pode declarar uma tarefa como concluida se tiver uma tarefa em curso
-                        if (currentTask.Id != null)
+                        if (currentTask.Id != string.Empty)
                         {
 
                             currentTask = new TarefaModel();
+                        }
+                        else
+                        {
+
                         }
 
                         break;
@@ -81,18 +79,14 @@ namespace Client
 
                         break;
                     case "QUIT":
-
+                        Console.WriteLine("Press any key to continue...");
+                        Console.ReadKey();
                         return;
                     default:
 
                         break;
-                }*/
+                }
             }
-            else
-            {
-                Console.WriteLine("No ingles");
-            }
-            Console.ReadKey();
         }
 
         static async Task<ClientModel> LoginAsync(ServiMoto.ServiMotoClient client)
@@ -110,6 +104,11 @@ namespace Client
             if (response.Servico != string.Empty)
             {
                 currentClient.Update(dados[0], response.Servico);
+                Console.WriteLine("\nLogin successful. Welcome {0} from {1}.", currentClient.Id, currentClient.Service);
+            }
+            else
+            {
+                Console.WriteLine("\nIncorrect username or password.\n");
             }
 
             return currentClient;
@@ -125,6 +124,11 @@ namespace Client
             if (response.Id != string.Empty)
             {
                 currentTask.UpdateTask(response.Id, response.Descricao, response.Estado, response.ClientId);
+                Console.WriteLine($"Current task: {currentTask.Description}\n");
+            }
+            else
+            {
+                Console.WriteLine("You don't have an allocated task.\n");
             }
 
             return currentTask;
@@ -135,7 +139,7 @@ namespace Client
             Console.Write("You can use the following commands: \n" +
                 ">TASK NEW \n>TASK COMPLETED \n" +
                 ">SERVICE LEAVE \n>SERVICE NEW \n" +
-                ">QUIT\n");
+                ">QUIT\n\n");
         }
     }
 }
