@@ -1,6 +1,6 @@
 # SD.TrabalhoPratico2
 ## **A fazer:**
-1. Acabar de implementar todas a funcionalidades anteriores (alocar e concluir tarefa)
+1. Acabar de implementar todas a funcionalidades anteriores (alocar e concluir tarefa) - Diogo
 2. ~Login~
 3. Pedido de associação/desassiociação a um novo serviço
 4. Implementar parte das motas
