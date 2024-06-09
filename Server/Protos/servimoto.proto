@@ -29,7 +29,7 @@ message ClientService {
 // Mensagem com a tarefa atual do utilizador
 message CurrentTask {
 	string id = 1;
-	string servico = 2;
-	string tarefa = 3;
-	string estado = 4;
+	string descricao = 2;
+	string estado = 3;
+	string clientId = 4;
 }

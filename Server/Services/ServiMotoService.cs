@@ -18,14 +18,15 @@ namespace Server.Services
 
             string workingDirectory = Environment.CurrentDirectory;
             string filePath = @$"{workingDirectory}\Data\Clientes.csv";
-            string[] lines = File.ReadAllLines(filePath);
 
-            string clientLine = lines.FirstOrDefault(line => line.StartsWith($"{request.Id},"));
+            var reader = new StreamReader(filePath);
 
-            if (clientLine != null)
+            string? line;
+
+            while ((line = reader.ReadLine()) != null)
             {
-                // Columns [0] = id; [1] = password; [2] = servico
-                string[] columns = clientLine.Split(',');
+                // ClientID,Password,Servico
+                string[] columns = line.Split(',');
 
                 if (columns[0] == request.Id && columns[1] == request.Password)
                 {
@@ -39,7 +40,33 @@ namespace Server.Services
 
         public override Task<CurrentTask> FindCurrentTask(TaskLookup request, ServerCallContext context)
         {
-            return base.FindCurrentTask(request, context);
+            CurrentTask output = new CurrentTask();
+
+            string servico = request.Servico;
+            string workingDirectory = Environment.CurrentDirectory;
+            string filePath = @$"{workingDirectory}\Data\{servico}.csv";
+
+            var reader = new StreamReader(filePath);
+
+            string? line;
+
+            while ((line = reader.ReadLine()) != null)
+            {
+                // TarefaId,Descricao,Estado,ClienteId
+                string[] columns = line.Split(',');
+
+                if (columns[3] == request.Id) // Verificar todas as linhas com o id do cliente
+                {
+                    if (columns[2] != "Concluido") // Ignorar as tarefas concluidas
+                    {
+                        output.Id = columns[0];
+                        output.Descricao = columns[1];
+                        output.Estado = columns[2];
+                        output.ClientId = columns[3];
+                    }
+                }
+            }
+            return Task.FromResult(output);
         }
     }
 }

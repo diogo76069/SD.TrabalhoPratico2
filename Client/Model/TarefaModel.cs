@@ -3,14 +3,15 @@
     public class TarefaModel
     {
         public string Id { get; set; }
-        public string? Description { get; set; }
+        public string Description { get; set; }
         public string State { get; set; }
         public string ClienteId { get; set; }
 
         public TarefaModel()
         {
-            Description = null;
-            State = "Nao alocado";
+            Id = string.Empty;
+            Description = string.Empty;
+            State = string.Empty;
             ClienteId = string.Empty;
         }
 
