@@ -40,55 +40,81 @@ namespace Client
             {
                 HelpCommand();
                 input = Console.ReadLine();
+                input.ToUpper();
 
-                switch(input)
+                switch (input)
                 {
                     // Pedir tarefa atual
                     case "TASK INFO":
-                        await GetCurrentTaskAsync(client, currentUser);
-                        break;
-                    case "TASK NEW":
-                        // Para pedir uma nova tarefa não pode ter nenhuma em curso
-                        if (currentTask.Id == string.Empty)
+                        // Para pedir informação sobre tarefa atual tem que estar em um serviço
+                        if(currentUser.Service != string.Empty)
                         {
-
+                            await GetCurrentTaskAsync(client, currentUser);
                         }
                         else
                         {
+                            Console.WriteLine("You are not allocated to a service.");
+                        }
 
+                        break;
+                    case "TASK NEW":
+                        // Para pedir uma nova tarefa não pode ter nenhuma em curso
+                        if (currentTask.Id == string.Empty && currentUser.Service != string.Empty)
+                        {
+                            currentTask = await GetNewTaskAsync(client, currentUser);
+                        }
+                        else
+                        {
+                            Console.WriteLine("You can't use this command.");
                         }
 
                         break;
                     case "TASK COMPLETE":
-                        // Apenas pode declarar uma tarefa como concluida se tiver uma tarefa em curso
-                        if (currentTask.Id != string.Empty)
+                        // Para concluir uma tarefa tem que ter uma tarefa em curso
+                        if (currentTask.State == "Em curso" && currentUser.Service == string.Empty)
                         {
 
-                            currentTask = new TarefaModel();
                         }
                         else
                         {
-
+                            Console.WriteLine("You can't use this command.");
                         }
 
                         break;
                     case "SERVICE LEAVE":
+                        // Para sair de um serviço tem que estar alocado em um
+                        if (currentUser.Service != string.Empty)
+                        {
 
+                        }
+                        else
+                        {
+                            Console.WriteLine("You can't use this command.");
+                        }
                         break;
                     case "SERVICE NEW":
+                        // Para pedir um novo serviço não pode estar alocado em nenhum
+                        if (currentUser.Service == string.Empty)
+                        {
 
+                        }
+                        else
+                        {
+                            Console.WriteLine("You can't use this command.");
+                        }
                         break;
                     case "QUIT":
                         Console.WriteLine("Press any key to continue...");
                         Console.ReadKey();
                         return;
                     default:
-
+                        Console.WriteLine("Invalid command.");
                         break;
-                }
+                }  
             }
         }
 
+        // Metodo para Login
         static async Task<ClientModel> LoginAsync(ServiMoto.ServiMotoClient client)
         {
             Console.WriteLine("Please log in.");
@@ -98,6 +124,7 @@ namespace Client
             ClientModel currentClient = new ClientModel();
             string[] dados = dadosInseridos.Split(' ');
 
+            // Envia ID e Password e recebe o serviço
             var request = new ClientLookup { Id = dados[0], Password = dados[1] };
             var response = await client.LogInClientAsync(request);
 
@@ -114,11 +141,12 @@ namespace Client
             return currentClient;
         }
 
+        // Metodo para receber a tarefa atual do cliente
         static async Task<TarefaModel> GetCurrentTaskAsync(ServiMoto.ServiMotoClient client, ClientModel currentClient)
         {
             TarefaModel currentTask = new TarefaModel();
 
-            var request = new TaskLookup { Id = currentClient.Id, Servico = currentClient.Service };
+            var request = new ClientInfo { Id = currentClient.Id, Servico = currentClient.Service };
             var response = await client.FindCurrentTaskAsync(request);
 
             if (response.Id != string.Empty)
@@ -134,12 +162,38 @@ namespace Client
             return currentTask;
         }
 
+        // Metodo para pedir uma nova tarefa
+        static async Task<TarefaModel> GetNewTaskAsync(ServiMoto.ServiMotoClient client, ClientModel currentClient)
+        {
+            TarefaModel currentTask = new TarefaModel();
+
+            var request = new ClientInfo { Id = currentClient.Id, Servico = currentClient.Service };
+            var response = await client.GetNewTaskAsync(request);
+
+            if (response.Id != string.Empty)
+            {
+                currentTask.UpdateTask(response.Id, response.Descricao, response.Estado, response.ClientId);
+                Console.WriteLine($"New task: {currentTask.Description}\n");
+            }
+            else
+            {
+                // Pode nao ser alocada se não houver tarefas disponíveis, ou erros
+                Console.WriteLine("Failed to allocate a new task. Try again later.\n");
+            }
+
+            return currentTask;
+        }
+
+        // Metodo para informar utilizador sobre comandos que pode usar.
         static void HelpCommand()
         {
-            Console.Write("You can use the following commands: \n" +
-                ">TASK NEW \n>TASK COMPLETED \n" +
-                ">SERVICE LEAVE \n>SERVICE NEW \n" +
-                ">QUIT\n\n");
+            string message = "You can use the following commands: \n" +
+                ">TASK INFO \n>TASK NEW \n" +
+                ">TASK COMPLETE \n>SERVICE LEAVE \n" +
+                ">SERVICE NEW \n>QUIT\n\n";
+
+            Console.Write(message);
+            return;
         }
     }
 }

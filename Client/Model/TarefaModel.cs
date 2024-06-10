@@ -59,8 +59,7 @@
                 return -1;
 
             string workingDirectory = Environment.CurrentDirectory;
-            string projectDirectory = Directory.GetParent(workingDirectory).Parent.Parent.FullName;
-            string filePath = @$"{projectDirectory}\Data\{client.Service}.csv";
+            string filePath = @$"{workingDirectory}\Data\{client.Service}.csv";
 
             string[] lines = File.ReadAllLines(filePath);
 
