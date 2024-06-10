@@ -1,4 +1,6 @@
 ﻿using Grpc.Core;
+using System.Diagnostics.Metrics;
+using System.Text.RegularExpressions;
 
 namespace Server.Services
 {
@@ -39,7 +41,7 @@ namespace Server.Services
         }
 
         // Servico para procurar Tarefa atual do cliente
-        public override Task<CurrentTask> FindCurrentTask(ClientInfo request, ServerCallContext context)
+        public override Task<CurrentTask> FindCurrentTask(TaskLookup request, ServerCallContext context)
         {
             CurrentTask output = new CurrentTask();
 
@@ -77,7 +79,7 @@ namespace Server.Services
         }
 
         // Servico para alocar um cliente a uma nova tarefa e devolver a tarefa
-        public override Task<CurrentTask> GetNewTask(ClientInfo request, ServerCallContext context)
+        public override Task<CurrentTask> GetNewTask(TaskLookup request, ServerCallContext context)
         {
             CurrentTask output = new CurrentTask();
 
@@ -121,7 +123,7 @@ namespace Server.Services
         }
 
         // Completar tarefa, recebe IdTarefa e Servico da tarefa
-        public override Task<Validation> CompleteTask(TaskInfo request, ServerCallContext context)
+        public override Task<Validation> CompleteTask(TaskLookup request, ServerCallContext context)
         {
             Validation output = new Validation();
             output.Result = false;
@@ -155,18 +157,60 @@ namespace Server.Services
 
                 File.WriteAllLines(filePath, lines);
 
+                output.Result = true;
             }
 
+            // Retorna true ou false dependendo se for bem sucedido.
             return Task.FromResult(output);
         }
 
-        public override Task<Validation> NewTask(ClientService request, ServerCallContext context)
+        public override Task<Validation> NewTask(TaskInfo request, ServerCallContext context)
         {
             Validation output = new Validation();
+            output.Result = false;
 
-            // Pub Sub
+            string servico = request.Servico;
 
-            return Task.FromResult(output);
+            try
+            {
+                if (servico == string.Empty)
+                {
+                    return Task.FromResult(output);
+                }
+
+                string workingDirectory = Environment.CurrentDirectory;
+                string filePath = @$"{workingDirectory}\Data\{servico}.csv";
+
+                List<string> lines = new List<string>(File.ReadAllLines(filePath));
+
+                //Padrao dos IDs
+                string pattern = $@"S{servico.Last()}_T(\d+)";
+
+                // Encontrar o ultimo ID
+                int maxId = lines
+                    .Select(line => Regex.Match(line, pattern))
+                    .Where(match => match.Success)
+                    .Select(match => int.Parse(match.Groups[1].Value))
+                    .DefaultIfEmpty(0)
+                    .Max();
+
+                string newId = $"S{servico.Last()}_T{maxId + 1}";
+                string newDesc = $"{request.Descricao}";
+
+                // TarefaId,Descricao,Estado,ClienteId
+                string newLine = $"{newId},{newDesc},Nao alocado,";
+
+                lines.Add(newLine);
+
+                File.WriteAllLines(filePath, lines);
+                output.Result = true;
+
+                return Task.FromResult(output);
+            }
+            catch
+            {
+                return Task.FromResult(output);
+            }
         }
     }
 }

@@ -19,6 +19,7 @@ namespace Client
             ClientModel currentUser = new ClientModel();
             TarefaModel currentTask = new TarefaModel();
             string? input = string.Empty;
+            string? command = string.Empty;
 
             // Ciclo para login
             while (true)
@@ -40,9 +41,9 @@ namespace Client
             {
                 HelpCommand();
                 input = Console.ReadLine();
-                input.ToUpper();
+                command = input.ToUpper();
 
-                switch (input)
+                switch (command)
                 {
                     // Pedir tarefa atual
                     case "TASK INFO":
@@ -71,7 +72,18 @@ namespace Client
                         break;
                     case "TASK COMPLETE":
                         // Para concluir uma tarefa tem que ter uma tarefa em curso
-                        if (currentTask.State == "Em curso" && currentUser.Service == string.Empty)
+                        if (currentTask.State == "Em curso" && currentUser.Service != string.Empty)
+                        {
+                            currentTask = await FinishTaskAsync(client, currentTask, currentUser.Service);
+                        }
+                        else
+                        {
+                            Console.WriteLine("You can't use this command.");
+                        }
+
+                        break;
+                    case "TASK ADD":
+                        if (currentUser.Service != string.Empty)
                         {
 
                         }
@@ -79,7 +91,6 @@ namespace Client
                         {
                             Console.WriteLine("You can't use this command.");
                         }
-
                         break;
                     case "SERVICE LEAVE":
                         // Para sair de um serviço tem que estar alocado em um
@@ -146,7 +157,7 @@ namespace Client
         {
             TarefaModel currentTask = new TarefaModel();
 
-            var request = new ClientInfo { Id = currentClient.Id, Servico = currentClient.Service };
+            var request = new TaskLookup { Id = currentClient.Id, Servico = currentClient.Service };
             var response = await client.FindCurrentTaskAsync(request);
 
             if (response.Id != string.Empty)
@@ -167,7 +178,7 @@ namespace Client
         {
             TarefaModel currentTask = new TarefaModel();
 
-            var request = new ClientInfo { Id = currentClient.Id, Servico = currentClient.Service };
+            var request = new TaskLookup { Id = currentClient.Id, Servico = currentClient.Service };
             var response = await client.GetNewTaskAsync(request);
 
             if (response.Id != string.Empty)
@@ -182,6 +193,45 @@ namespace Client
             }
 
             return currentTask;
+        }
+
+        static async Task<TarefaModel> FinishTaskAsync(ServiMoto.ServiMotoClient client, TarefaModel currentTask, string servico)
+        {
+            TarefaModel task = currentTask;
+
+            if (task.Id != string.Empty)
+            {
+                var request = new TaskLookup { Id = task.Id, Servico = servico };
+                var response = await client.CompleteTaskAsync(request);
+
+                if (response.Result)
+                {
+                    Console.WriteLine("Task completed successfully.");
+                    task = new TarefaModel();
+                }
+                else
+                {
+                    Console.WriteLine("Failed to complete task.");
+                }
+
+                return task;
+            }
+
+            Console.WriteLine("You don't have an assigned task.");
+
+            return task;
+        }
+
+        static async Task CreateNewTaskAsync(ServiMoto.ServiMotoClient client, ClientModel currentUser)
+        {
+            Console.WriteLine("\nPlease insert the task description");
+            string? descricao = Console.ReadLine();
+
+            if (descricao != null)
+            {
+                var request = new TaskInfo { Servico = currentUser.Service, Descricao = descricao };
+                var response = await client.NewTaskAsync(request);
+            }
         }
 
         // Metodo para informar utilizador sobre comandos que pode usar.
