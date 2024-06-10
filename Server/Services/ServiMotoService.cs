@@ -290,13 +290,6 @@ namespace Server.Services
 
             try
             {
-                Console.WriteLine("Escolha o serviço (Servico_A, Servico_B, Servico_C ou Servico_D):\n");
-                string novoServico = Console.ReadLine();
-
-                if (servico != string.Empty || novoServico != "Servico_A" || novoServico != "Servico_B" || novoServico != "Servico_C" || novoServico != "Servico_D")
-                {
-                    return Task.FromResult(output);
-                }
                 string workingDirectory = Environment.CurrentDirectory;
                 string filePath = @$"{workingDirectory}\Data\Clientes.csv";
 
@@ -312,7 +305,7 @@ namespace Server.Services
                     string[] colunas = line.Split(',');
 
                     // Novo Serviço
-                    colunas[3] = novoServico;
+                    colunas[3] = request.Servico;
 
                     line = string.Join(',', colunas);
                     lines[lineIndex] = line;

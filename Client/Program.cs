@@ -30,7 +30,15 @@ namespace Client
                 if (currentUser.Id != string.Empty)
                 {
                     // Depois de se autenticar procura a tarefa atual
-                    currentTask = await GetCurrentTaskAsync(client, currentUser);
+                    if (currentUser.Service != string.Empty)
+                    {
+                        currentTask = await GetCurrentTaskAsync(client, currentUser);
+                    }
+                    else
+                    {
+                        Console.WriteLine("Utilizador sem serviço alocado");
+                    }
+                    
                     break;
                 }
             }
@@ -101,7 +109,7 @@ namespace Client
                         // Para sair de um serviço tem que estar alocado em um serviço
                         if (currentUser.Service != string.Empty)
                         {
-                            await LeaveService(client, currentTask, currentUser, currentUser.Service);
+                            currentUser = await LeaveService(client, currentTask, currentUser, currentUser.Service);
                         }
                         else
                         {
@@ -112,7 +120,7 @@ namespace Client
                         // Para pedir um novo serviço não pode estar alocado em nenhum
                         if (currentUser.Service == string.Empty)
                         {
-                            await NewService(client, currentUser, currentUser.Service);
+                            currentUser = await NewService(client, currentUser);
                         }
                         else
                         {
@@ -309,8 +317,9 @@ namespace Client
             return;
         }
 
-        static async Task LeaveService(ServiMoto.ServiMotoClient client, TarefaModel currentTask, ClientModel currentClient, string servico)
+        static async Task<ClientModel> LeaveService(ServiMoto.ServiMotoClient client, TarefaModel currentTask, ClientModel currentClient, string servico)
         {
+            ClientModel user = currentClient;
             TarefaModel task = currentTask;
 
             if (servico != string.Empty)
@@ -320,7 +329,8 @@ namespace Client
 
                 if (response.Result)
                 {
-                    Console.WriteLine("Service leaved successfully.\n");
+                    user.Service = string.Empty;
+                    Console.WriteLine("Service left successfully.\n");
                 }
                 else
                 {
@@ -332,15 +342,24 @@ namespace Client
                 Console.WriteLine("You don't have an assigned service.\n");
             }
 
+            return user;
         }
-        static async Task NewService(ServiMoto.ServiMotoClient client, ClientModel currentClient, string servico)
+
+        static async Task<ClientModel> NewService(ServiMoto.ServiMotoClient client, ClientModel currentClient)
         {
-            if (servico == string.Empty) {
-                var request = new TaskLookup { Id = currentClient.Id, Servico = currentClient.Service };
+            ClientModel user = currentClient;
+            Console.WriteLine("Escolha o novo serviço (Servico_A, Servico_B, Servico_C ou Servico_D):\n");
+            string novoServico = Console.ReadLine();
+
+            if(novoServico == "Servico_A" || novoServico == "Servico_B" || novoServico == "Servico_C" || novoServico == "Servico_D")
+            {
+                var request = new TaskLookup { Id = currentClient.Id, Servico = novoServico };
                 var response = await client.NewServiceAsync(request);
+
 
                 if (response.Result)
                 {
+                    user.Service = novoServico;
                     Console.WriteLine($"New service: {currentClient.Service}");
                 }
                 else
@@ -348,13 +367,20 @@ namespace Client
                     Console.WriteLine("Failed to allocate a new service. Try again later.\n");
                 }
             }
+            else
+            {
+
+                Console.WriteLine("Serviço incorreto.\n");
+            }
+
+            return user;
         }
 
         // Metodo para informar utilizador sobre comandos que pode usar.
         static void HelpCommand()
         {
             string message = "You can use the following commands: \n" +
-                ">TASK INFO \n>TASK NEW \nTASK CREATE (for admins)\n" +
+                ">TASK INFO \n>TASK NEW \n>TASK CREATE (for admins)\n" +
                 ">TASK COMPLETE \n>SERVICE LEAVE \n" +
                 ">SERVICE NEW \n>SERVICE INFO (for admins)\n>QUIT\n\n";
 
