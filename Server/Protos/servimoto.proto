@@ -7,7 +7,7 @@ service ServiMoto {
 	rpc FindCurrentTask (TaskLookup) returns (CurrentTask);
 	rpc GetNewTask (TaskLookup) returns (CurrentTask);
 	rpc CompleteTask (TaskLookup) returns (Validation);
-	rpc LeaveService (TaskLookup) returns (Validation);
+	rpc LeaveService (ServiceLookup) returns (Validation);
 	rpc NewService (TaskLookup) returns (Validation);
 	rpc NewTask (TaskInfo) returns (Validation);
 	rpc GetTasksInfo (ServiceLookup) returns (FileContent);
@@ -32,6 +32,12 @@ message TaskInfo {
 message TaskLookup {
 	string id = 1;
 	string servico = 2;
+}
+// Mensagem com informação sobre tarefa e utilizador
+message ServiceLookup {
+	string id_task = 1;
+	string id_utilizador = 2;
+	string servico = 3;
 }
 
 message ClientLookup {

@@ -98,10 +98,10 @@ namespace Client
                         }
                         break;
                     case "SERVICE LEAVE":
-                        // Para sair de um serviço tem que estar alocado em um
+                        // Para sair de um serviço tem que estar alocado em um serviço
                         if (currentUser.Service != string.Empty)
                         {
-
+                            await LeaveService(client, currentTask, currentUser, currentUser.Service);
                         }
                         else
                         {
@@ -112,7 +112,7 @@ namespace Client
                         // Para pedir um novo serviço não pode estar alocado em nenhum
                         if (currentUser.Service == string.Empty)
                         {
-
+                            await NewService(client, currentUser, currentUser.Service);
                         }
                         else
                         {
@@ -307,6 +307,47 @@ namespace Client
             }
 
             return;
+        }
+
+        static async Task LeaveService(ServiMoto.ServiMotoClient client, TarefaModel currentTask, ClientModel currentClient, string servico)
+        {
+            TarefaModel task = currentTask;
+
+            if (servico != string.Empty)
+            {
+                var request = new ServiceLookup { IdTask = task.Id, IdUtilizador = currentClient.Id, Servico = servico};
+                var response = await client.LeaveServiceAsync(request);
+
+                if (response.Result)
+                {
+                    Console.WriteLine("Service leaved successfully.\n");
+                }
+                else
+                {
+                    Console.WriteLine("Failed to leave service.\n");
+                }
+            }
+            else
+            {
+                Console.WriteLine("You don't have an assigned service.\n");
+            }
+
+        }
+        static async Task NewService(ServiMoto.ServiMotoClient client, ClientModel currentClient, string servico)
+        {
+            if (servico == string.Empty) {
+                var request = new TaskLookup { Id = currentClient.Id, Servico = currentClient.Service };
+                var response = await client.NewServiceAsync(request);
+
+                if (response.Result)
+                {
+                    Console.WriteLine($"New service: {currentClient.Service}");
+                }
+                else
+                {
+                    Console.WriteLine("Failed to allocate a new service. Try again later.\n");
+                }
+            }
         }
 
         // Metodo para informar utilizador sobre comandos que pode usar.

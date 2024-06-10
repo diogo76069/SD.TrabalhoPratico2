@@ -237,5 +237,98 @@ namespace Server.Services
 
             return Task.FromResult(output);
         }
+        public override Task<Validation> LeaveService(ServiceLookup request, ServerCallContext context)
+        {
+            Validation output = new Validation();
+            output.Result = false;
+
+            string user = request.IdUtilizador;
+            string task = request.IdTask;
+            string service = request.Servico;
+
+            if (service == string.Empty || task != string.Empty)
+            {
+                return Task.FromResult(output);
+            }
+
+            string workingDirectory = Environment.CurrentDirectory;
+            string filePath = @$"{workingDirectory}\Data\Clientes.csv";
+
+            string[] lines = File.ReadAllLines(filePath);
+
+            // Procurar linha com o cliente atual
+            int lineIndex = Array.FindIndex(lines, line => line.StartsWith($"{user},"));
+
+            if (lineIndex >= 0)
+            {
+                string line = lines[lineIndex];
+                // ClienteId, Password, Serviço
+                string[] colunas = line.Split(',');
+
+                // Sair do Serviço
+                colunas[2] = string.Empty;
+
+                line = string.Join(',', colunas);
+                lines[lineIndex] = line;
+
+                File.WriteAllLines(filePath, lines);
+
+                output.Result = true;
+            }
+
+            // Retorna true ou false dependendo se for bem sucedido.
+            return Task.FromResult(output);
+        }
+
+        public override Task<Validation> NewService(TaskLookup request, ServerCallContext context)
+        {
+            Validation output = new Validation();
+            output.Result = false;
+
+            string servico = request.Servico;
+            string user = request.Id;
+
+            try
+            {
+                Console.WriteLine("Escolha o serviço (Servico_A, Servico_B, Servico_C ou Servico_D):\n");
+                string novoServico = Console.ReadLine();
+
+                if (servico != string.Empty || novoServico != "Servico_A" || novoServico != "Servico_B" || novoServico != "Servico_C" || novoServico != "Servico_D")
+                {
+                    return Task.FromResult(output);
+                }
+                string workingDirectory = Environment.CurrentDirectory;
+                string filePath = @$"{workingDirectory}\Data\Clientes.csv";
+
+                string[] lines = File.ReadAllLines(filePath);
+
+                // Procurar linha com o cliente atual
+                int lineIndex = Array.FindIndex(lines, line => line.StartsWith($"{user},"));
+
+                if (lineIndex >= 0)
+                {
+                    string line = lines[lineIndex];
+                    // ClienteId, Password, Serviço
+                    string[] colunas = line.Split(',');
+
+                    // Novo Serviço
+                    colunas[2] = novoServico;
+
+                    line = string.Join(',', colunas);
+                    lines[lineIndex] = line;
+
+                    File.WriteAllLines(filePath, lines);
+
+                    output.Result = true;
+                }
+
+                return Task.FromResult(output);
+            }
+            catch
+            {
+                return Task.FromResult(output);
+            }
+
+        }
     }
 }
