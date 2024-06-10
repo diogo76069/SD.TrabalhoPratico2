@@ -10,8 +10,8 @@ service ServiMoto {
 	rpc LeaveService (ServiceLookup) returns (Validation);
 	rpc NewService (TaskLookup) returns (Validation);
 	rpc NewTask (TaskInfo) returns (Validation);
-	rpc GetTasksInfo (ServiceLookup) returns (FileContent);
-	rpc GetClientsInfo (ServiceLookup) returns (FileContent);
+	rpc GetTasksInfo (Service) returns (FileContent);
+	rpc GetClientsInfo (Service) returns (FileContent);
 	rpc EditTask (TaskLookup) returns (Validation);
 	rpc EditClient (ClientLookup) returns (Validation);
 }
@@ -63,7 +63,7 @@ message Validation {
 	bool result = 1;
 }
 
-message ServiceLookup {
+message Service {
 	string service = 1;
 }
 

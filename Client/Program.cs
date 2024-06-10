@@ -52,7 +52,7 @@ namespace Client
                         }
                         else
                         {
-                            Console.WriteLine("You are not allocated to a service.");
+                            Console.WriteLine("You are not allocated to a service.\n");
                         }
 
                         break;
@@ -66,12 +66,12 @@ namespace Client
                             }
                             else
                             {
-                                Console.WriteLine("Administrators can't request new tasks.");
+                                Console.WriteLine("Administrators can't request new tasks.\n");
                             }
                         }
                         else
                         {
-                            Console.WriteLine("You can't use this command.");
+                            Console.WriteLine("You can't use this command.\n");
                         }
 
                         break;
@@ -83,7 +83,7 @@ namespace Client
                         }
                         else
                         {
-                            Console.WriteLine("You can't use this command.");
+                            Console.WriteLine("You can't use this command.\n");
                         }
 
                         break;
@@ -94,7 +94,7 @@ namespace Client
                         }
                         else
                         {
-                            Console.WriteLine("You can't use this command.");
+                            Console.WriteLine("Only admins can use this command.\n");
                         }
                         break;
                     case "SERVICE LEAVE":
@@ -105,7 +105,7 @@ namespace Client
                         }
                         else
                         {
-                            Console.WriteLine("You can't use this command.");
+                            Console.WriteLine("You can't use this command.\n");
                         }
                         break;
                     case "SERVICE NEW":
@@ -116,7 +116,7 @@ namespace Client
                         }
                         else
                         {
-                            Console.WriteLine("You can't use this command.");
+                            Console.WriteLine("You can't use this command.\n");
                         }
                         break;
                     case "SERVICE INFO":
@@ -126,7 +126,7 @@ namespace Client
                         }
                         else
                         {
-                            Console.WriteLine("You can't use this command.");
+                            Console.WriteLine("You can't use this command.\n");
                         }
 
                         break;
@@ -137,7 +137,7 @@ namespace Client
                         }
                         else
                         {
-                            Console.WriteLine("You can't use this command.");
+                            Console.WriteLine("You can't use this command.\n");
                         }
 
                         break;
@@ -166,7 +166,7 @@ namespace Client
             var request = new ClientLogin { Id = dados[0], Password = dados[1] };
             var response = await client.LogInClientAsync(request);
 
-            if (response.Servico != string.Empty)
+            if (response.Role != string.Empty)
             {
                 currentClient.Update(dados[0], response.Servico, response.Role);
                 if (currentClient.Role == "Admin")
@@ -288,7 +288,7 @@ namespace Client
 
             if (command == "TASKS")
             {
-                var request = new ServiceLookup { Service = currentUser.Service };
+                var request = new Service { Service_ = currentUser.Service };
                 var response = await client.GetTasksInfoAsync(request);
 
                 byte[] byteArray = response.Info.ToByteArray();
@@ -354,9 +354,9 @@ namespace Client
         static void HelpCommand()
         {
             string message = "You can use the following commands: \n" +
-                ">TASK INFO \n>TASK NEW \nTASK CREATE" +
+                ">TASK INFO \n>TASK NEW \nTASK CREATE (for admins)\n" +
                 ">TASK COMPLETE \n>SERVICE LEAVE \n" +
-                ">SERVICE NEW \n>QUIT\n\n";
+                ">SERVICE NEW \n>SERVICE INFO (for admins)\n>QUIT\n\n";
 
             Console.Write(message);
             return;

@@ -215,10 +215,10 @@ namespace Server.Services
             }
         }
 
-        public override Task<FileContent> GetTasksInfo(ServiceLookup request, ServerCallContext context)
+        public override Task<FileContent> GetTasksInfo(Service request, ServerCallContext context)
         {
             FileContent output = new FileContent();
-            string servico = request.Service;
+            string servico = request.Service_;
 
             if (servico == string.Empty )
             {
@@ -262,11 +262,11 @@ namespace Server.Services
             if (lineIndex >= 0)
             {
                 string line = lines[lineIndex];
-                // ClienteId, Password, Serviço
+                // ClienteId, Password, Role, Serviço
                 string[] colunas = line.Split(',');
 
                 // Sair do Serviço
-                colunas[2] = string.Empty;
+                colunas[3] = string.Empty;
 
                 line = string.Join(',', colunas);
                 lines[lineIndex] = line;
@@ -312,7 +312,7 @@ namespace Server.Services
                     string[] colunas = line.Split(',');
 
                     // Novo Serviço
-                    colunas[2] = novoServico;
+                    colunas[3] = novoServico;
 
                     line = string.Join(',', colunas);
                     lines[lineIndex] = line;
@@ -328,7 +328,6 @@ namespace Server.Services
             {
                 return Task.FromResult(output);
             }
-
         }
     }
 }
