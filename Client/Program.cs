@@ -1,6 +1,7 @@
 ﻿using Client.Model;
+using Google.Protobuf;
 using Grpc.Net.Client;
-using Server;
+using System.Text;
 
 namespace Client
 {
@@ -29,12 +30,9 @@ namespace Client
                 if (currentUser.Id != string.Empty)
                 {
                     // Depois de se autenticar procura a tarefa atual
-                    Console.Clear();
                     currentTask = await GetCurrentTaskAsync(client, currentUser);
                     break;
                 }
-
-                Console.Clear();
             }
 
             while (true)
@@ -48,7 +46,7 @@ namespace Client
                     // Pedir tarefa atual
                     case "TASK INFO":
                         // Para pedir informação sobre tarefa atual tem que estar em um serviço
-                        if(currentUser.Service != string.Empty)
+                        if(currentUser.Service != string.Empty && currentUser.Role == "Normal")
                         {
                             await GetCurrentTaskAsync(client, currentUser);
                         }
@@ -62,7 +60,14 @@ namespace Client
                         // Para pedir uma nova tarefa não pode ter nenhuma em curso
                         if (currentTask.Id == string.Empty && currentUser.Service != string.Empty)
                         {
-                            currentTask = await GetNewTaskAsync(client, currentUser);
+                            if(currentUser.Role != "Admin")
+                            {
+                                currentTask = await GetNewTaskAsync(client, currentUser);
+                            }
+                            else
+                            {
+                                Console.WriteLine("Administrators can't request new tasks.");
+                            }
                         }
                         else
                         {
@@ -82,10 +87,10 @@ namespace Client
                         }
 
                         break;
-                    case "TASK ADD":
-                        if (currentUser.Service != string.Empty)
+                    case "TASK CREATE":
+                        if (currentUser.Service != string.Empty && currentUser.Role == "Admin")
                         {
-
+                            await CreateNewTaskAsync(client, currentUser);
                         }
                         else
                         {
@@ -114,6 +119,28 @@ namespace Client
                             Console.WriteLine("You can't use this command.");
                         }
                         break;
+                    case "SERVICE INFO":
+                        if (currentUser.Service != string.Empty)
+                        {
+                            await GetServiceInfoAsync(client, currentUser);
+                        }
+                        else
+                        {
+                            Console.WriteLine("You can't use this command.");
+                        }
+
+                        break;
+                    case "SERVICE UPDATE":
+                        if (currentUser.Service != string.Empty)
+                        {
+
+                        }
+                        else
+                        {
+                            Console.WriteLine("You can't use this command.");
+                        }
+
+                        break;
                     case "QUIT":
                         Console.WriteLine("Press any key to continue...");
                         Console.ReadKey();
@@ -136,13 +163,20 @@ namespace Client
             string[] dados = dadosInseridos.Split(' ');
 
             // Envia ID e Password e recebe o serviço
-            var request = new ClientLookup { Id = dados[0], Password = dados[1] };
+            var request = new ClientLogin { Id = dados[0], Password = dados[1] };
             var response = await client.LogInClientAsync(request);
 
             if (response.Servico != string.Empty)
             {
-                currentClient.Update(dados[0], response.Servico);
-                Console.WriteLine("\nLogin successful. Welcome {0} from {1}.", currentClient.Id, currentClient.Service);
+                currentClient.Update(dados[0], response.Servico, response.Role);
+                if (currentClient.Role == "Admin")
+                {
+                    Console.WriteLine("\nLogin successful. Welcome administrator {0} from {1}.", currentClient.Id, currentClient.Service);
+                }
+                else
+                {
+                    Console.WriteLine("\nLogin successful. Welcome user {0} from {1}.", currentClient.Id, currentClient.Service);
+                }
             }
             else
             {
@@ -206,39 +240,80 @@ namespace Client
 
                 if (response.Result)
                 {
-                    Console.WriteLine("Task completed successfully.");
+                    Console.WriteLine("Task completed successfully.\n");
                     task = new TarefaModel();
                 }
                 else
                 {
-                    Console.WriteLine("Failed to complete task.");
+                    Console.WriteLine("Failed to complete task.\n");
                 }
 
                 return task;
             }
 
-            Console.WriteLine("You don't have an assigned task.");
+            Console.WriteLine("You don't have an assigned task.\n");
 
             return task;
         }
 
         static async Task CreateNewTaskAsync(ServiMoto.ServiMotoClient client, ClientModel currentUser)
         {
-            Console.WriteLine("\nPlease insert the task description");
+            Console.WriteLine("\nPlease insert the task description.");
             string? descricao = Console.ReadLine();
 
             if (descricao != null)
             {
                 var request = new TaskInfo { Servico = currentUser.Service, Descricao = descricao };
                 var response = await client.NewTaskAsync(request);
+
+                if (response.Result)
+                {
+                    Console.WriteLine("Task created successfully.\n");
+                }
+                else
+                {
+                    Console.WriteLine("Failed to create a new task.\n");
+                }
             }
+
+            return;
+        }
+
+        static async Task GetServiceInfoAsync(ServiMoto.ServiMotoClient client, ClientModel currentUser)
+        {
+            Console.Write("What information do you want to access?\n" +
+                ">TASKS\n>CLIENTS\n\n");
+            string? input = Console.ReadLine();
+            string? command = input.ToUpper();
+
+            if (command == "TASKS")
+            {
+                var request = new ServiceLookup { Service = currentUser.Service };
+                var response = await client.GetTasksInfoAsync(request);
+
+                byte[] byteArray = response.Info.ToByteArray();
+
+                string service = Encoding.UTF8.GetString(byteArray);
+
+                Console.Write(service);
+            }
+            else
+            {
+                if (command == "BACK")
+                {
+                    return;
+                }
+                Console.WriteLine("Unrecognised command.");
+            }
+
+            return;
         }
 
         // Metodo para informar utilizador sobre comandos que pode usar.
         static void HelpCommand()
         {
             string message = "You can use the following commands: \n" +
-                ">TASK INFO \n>TASK NEW \n" +
+                ">TASK INFO \n>TASK NEW \nTASK CREATE" +
                 ">TASK COMPLETE \n>SERVICE LEAVE \n" +
                 ">SERVICE NEW \n>QUIT\n\n";
 

@@ -1,5 +1,6 @@
-﻿using Grpc.Core;
-using System.Diagnostics.Metrics;
+﻿using Google.Protobuf;
+using Grpc.Core;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace Server.Services
@@ -14,7 +15,7 @@ namespace Server.Services
         }
 
         // Verifica os dados de login e retorna o servico do cliente
-        public override Task<ClientService> LogInClient(ClientLookup request, ServerCallContext context)
+        public override Task<ClientService> LogInClient(ClientLogin request, ServerCallContext context)
         {
             ClientService output = new ClientService();
 
@@ -26,12 +27,13 @@ namespace Server.Services
 
             while ((line = reader.ReadLine()) != null)
             {
-                // ClientID,Password,Servico
+                // ClientID,Password,Role,Servico
                 string[] columns = line.Split(',');
 
                 if (columns[0] == request.Id && columns[1] == request.Password)
                 {
-                    output.Servico = columns[2];
+                    output.Role = columns[2];
+                    output.Servico = columns[3];
                 }
             }
 
@@ -211,6 +213,29 @@ namespace Server.Services
             {
                 return Task.FromResult(output);
             }
+        }
+
+        public override Task<FileContent> GetTasksInfo(ServiceLookup request, ServerCallContext context)
+        {
+            FileContent output = new FileContent();
+            string servico = request.Service;
+
+            if (servico == string.Empty )
+            {
+                return Task.FromResult(output);
+            }
+
+            string workingDirectory = Environment.CurrentDirectory;
+            string filePath = @$"{workingDirectory}\Data\{servico}.csv";
+
+            string content = File.ReadAllText(filePath);
+            byte[] byteArray = Encoding.UTF8.GetBytes(content);
+
+            ByteString contentBytes = ByteString.CopyFrom(byteArray);
+
+            output.Content = contentBytes;
+
+            return Task.FromResult(output);
         }
     }
 }
